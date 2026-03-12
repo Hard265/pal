@@ -9,12 +9,16 @@
   "scripts": {
     "build": "tsc && chmod +x dist/index.js",
     "dev": "ts-node src/index.ts",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "test": "jest"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/minimist": "^1.2.5",
     "@types/node": "^25.4.0",
     "@types/sql.js": "^1.4.9",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
