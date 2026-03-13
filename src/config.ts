@@ -7,7 +7,7 @@ dotenv.config();
 
 const ConfigSchema = z.object({
   geminiApiKey: z.string().min(1, "GEMINI_API_KEY is required"),
-  geminiModel: z.string().default("gemini-2.0-flash"),
+  geminiModel: z.string().default("gemini-2.5-flash"),
   personaName: z.string().default("Alex"),
   historyLimit: z.coerce.number().int().positive().default(20),
   summaryTokenThreshold: z.coerce.number().int().positive().default(3000),

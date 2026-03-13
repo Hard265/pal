@@ -115,9 +115,13 @@ export class GeminiAgent {
     const name = fc.name ?? "";
     const args = (fc.args ?? {}) as Record<string, unknown>;
     const id = fc.id ?? name;
-    log.debug(`agent: calling tool "${name}" (id=${id})`, args);
+    
+    log.info(`agent: executing tool "${name}" with args: ${JSON.stringify(args)}`);
+    log.debug(`agent: tool call id=${id}`);
 
     const result = await bridge.execute(name, args);
+    log.info(`agent: tool "${name}" returned result: ${JSON.stringify(result).slice(0, 200)}${JSON.stringify(result).length > 200 ? "..." : ""}`);
+    
     return { id, name, result };
   }
 }

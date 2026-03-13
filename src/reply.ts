@@ -18,6 +18,7 @@ export async function handleInbound(sms: InboundSms): Promise<void> {
   const body = sms.body.trim();
 
   log.info(`reply: inbound from ${number} — "${body.slice(0, 60)}"`);
+  log.info(`reply: using model ${config.geminiModel}`);
 
   const store = await ConversationStore.open();
   const bridge = new TermuxBridge();
