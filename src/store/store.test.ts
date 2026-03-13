@@ -70,4 +70,19 @@ describe("ConversationStore", () => {
     const { summary } = store.buildConversationHistory(number);
     expect(summary).toBe("They talked about stuff.");
   });
+
+  it("should save and retrieve facts", () => {
+    const number = "+1234567890";
+    store.upsertContact(number, "John Doe");
+    
+    store.saveFact(number, "Gate code is 1234");
+    store.saveFact(number, "Loves dark chocolate");
+
+    const facts = store.getFacts(number);
+    expect(facts.length).toBe(2);
+    expect(facts).toContain("Gate code is 1234");
+    expect(facts).toContain("Loves dark chocolate");
+    // Should be in descending order of creation
+    expect(facts[0]).toBe("Loves dark chocolate");
+  });
 });

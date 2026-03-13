@@ -2,6 +2,7 @@ import { type FunctionDeclaration, type Schema, Type } from "@google/genai";
 import { BridgeTool, ToolParameter } from "./types";
 import { getRecentMessagesTool, sendSmsTool } from "./sms";
 import { lookupContactTool } from "./contacts";
+import { rememberFactTool, searchFactsTool } from "./facts";
 import { log } from "../logger";
 
 export type { BridgeTool, ToolParameter };
@@ -19,6 +20,8 @@ export class TermuxBridge {
     this.register(getRecentMessagesTool);
     this.register(sendSmsTool);
     this.register(lookupContactTool);
+    this.register(rememberFactTool);
+    this.register(searchFactsTool);
   }
 
   register(tool: BridgeTool): void {

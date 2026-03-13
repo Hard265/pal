@@ -82,6 +82,17 @@ export class ConversationStore {
 
       CREATE INDEX IF NOT EXISTS idx_messages_contact
         ON messages(contact_number, sent_at DESC);
+
+      CREATE TABLE IF NOT EXISTS facts (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        contact_number  TEXT    NOT NULL,
+        fact_text       TEXT    NOT NULL,
+        created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (contact_number) REFERENCES contacts(number)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_facts_contact
+        ON facts(contact_number);
     `);
   }
 
@@ -178,6 +189,24 @@ export class ConversationStore {
       [number, number, keepLast]
     );
     this.persist();
+  }
+
+  // ── Fact ops ───────────────────────────────────────────────────────────────
+
+  saveFact(number: string, factText: string): void {
+    this.db.run(
+      "INSERT INTO facts (contact_number, fact_text) VALUES (?, ?)",
+      [number, factText]
+    );
+    this.persist();
+  }
+
+  getFacts(number: string): string[] {
+    const rows = this.queryAll<{ fact_text: string }>(
+      "SELECT fact_text FROM facts WHERE contact_number = ? ORDER BY id DESC",
+      [number]
+    );
+    return rows.map((r) => r.fact_text);
   }
 
   // ── AI history builder ─────────────────────────────────────────────────────
