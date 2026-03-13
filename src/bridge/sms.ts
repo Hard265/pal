@@ -101,12 +101,14 @@ export const getRecentMessagesTool: BridgeTool = {
     if (!result.ok) return { error: result.error };
 
     // Return a clean subset to avoid token bloat
-    return result.data.map((m) => ({
+    const messages = result.data.map((m) => ({
       id: m._id,
       type: m.type,
       body: m.body,
       date: m.date,
     }));
+
+    return { messages };
   },
 };
 
