@@ -4,7 +4,7 @@ export interface SmsMessage {
   threadid: number;
   type: "inbox" | "sent" | "draft" | "outbox" | "failed" | "queued";
   read: boolean;
-  number: string;
+  address: string;
   body: string;
   date: string; // ISO timestamp
 }

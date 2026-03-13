@@ -15,20 +15,27 @@ export function listSms(opts: {
   type?: "inbox" | "sent" | "all";
 }): ToolResult<SmsMessage[]> {
   try {
-    const args = ["termux-sms-list"];
+    const args = [];
 
     if (opts.limit) args.push("-l", String(opts.limit));
-    if (opts.number) args.push("-n", opts.number);
+    if (opts.number) args.push("-f", opts.number);
     if (opts.type && opts.type !== "all") args.push("-t", opts.type);
 
-    log.debug("sms:list →", args.join(" "));
+    log.debug("sms:list →", "termux-sms-list", args.join(" "));
 
-    const out = execSync(args.join(" "), {
+    const result = spawnSync("termux-sms-list", args, {
       encoding: "utf8",
       timeout: 10_000,
     });
 
-    const messages: SmsMessage[] = JSON.parse(out);
+    if (result.status !== 0) {
+      return {
+        ok: false,
+        error: result.stderr || `exited with code ${result.status}`,
+      };
+    }
+
+    const messages: SmsMessage[] = JSON.parse(result.stdout);
     return { ok: true, data: messages };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -42,7 +49,7 @@ export function sendSms(to: string, body: string): ToolResult<void> {
   try {
     log.debug(`sms:send → to=${to} body="${body.slice(0, 60)}..."`);
 
-    const result = spawnSync("termux-sms-send", ["-n", to, body], {
+    const result = spawnSync("termux-sms-send", ["-n", to, "-s", "0", body], {
       encoding: "utf8",
       timeout: 15_000,
     });
