@@ -2,6 +2,7 @@
   "name": "pal",
   "version": "0.1.0",
   "description": "Auto SMS reply agent powered by Google Gemini",
+  "private": true,
   "main": "dist/index.js",
   "bin": {
     "pal": "./dist/index.js"
