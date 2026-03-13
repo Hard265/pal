@@ -13,7 +13,20 @@ export interface RetryOptions {
  */
 export function parseRetryDelay(err: unknown): number | null {
   try {
-    // The SDK wraps the raw response — walk the error to find retryDelay
+    // 1. Direct object inspection (robust)
+    const e = err as any;
+    const details = e?.details || e?.error?.details;
+    if (Array.isArray(details)) {
+      const info = details.find(
+        (d: any) => d["@type"]?.includes("RetryInfo") || d.retryDelay
+      );
+      if (info?.retryDelay) {
+        const match = String(info.retryDelay).match(/^([\d.]+)s$/);
+        if (match) return Math.ceil(parseFloat(match[1]) * 1000);
+      }
+    }
+
+    // 2. String fallback (fails for some Errors, but good for raw responses)
     const raw = JSON.stringify(err);
     const match = raw.match(/"retryDelay"\s*:\s*"([\d.]+)s"/);
     if (match) return Math.ceil(parseFloat(match[1]) * 1000);
@@ -23,13 +36,38 @@ export function parseRetryDelay(err: unknown): number | null {
   return null;
 }
 
-function is429(err: unknown): boolean {
-  const raw = JSON.stringify(err);
-  return (
-    raw.includes("RESOURCE_EXHAUSTED") ||
-    raw.includes('"code":429') ||
-    raw.includes('"code": 429')
-  );
+export function is429(err: unknown): boolean {
+  if (!err) return false;
+
+  // 1. Check numeric status codes (common in SDK errors)
+  const e = err as any;
+  const status = e.status || e.code || e.error?.code || e.error?.status;
+  if (status === 429 || status === "429" || status === "RESOURCE_EXHAUSTED") {
+    return true;
+  }
+
+  // 2. Check message and name
+  const msg = (e.message || "").toUpperCase();
+  const name = (e.name || "").toUpperCase();
+  if (
+    msg.includes("RESOURCE_EXHAUSTED") ||
+    msg.includes("429") ||
+    name.includes("RESOURCE_EXHAUSTED")
+  ) {
+    return true;
+  }
+
+  // 3. String fallback (least reliable but covers raw JSON)
+  try {
+    const raw = JSON.stringify(err);
+    return (
+      raw.includes("RESOURCE_EXHAUSTED") ||
+      raw.includes('"code":429') ||
+      raw.includes('"code": 429')
+    );
+  } catch {
+    return false;
+  }
 }
 
 function sleep(ms: number): Promise<void> {
@@ -46,7 +84,7 @@ export async function withRetry<T>(
   fn: () => Promise<T>,
   opts: RetryOptions = {}
 ): Promise<T> {
-  const { maxAttempts = 4, baseDelayMs = 2_000, maxDelayMs = 120_000 } = opts;
+  const { maxAttempts = 10, baseDelayMs = 2_000, maxDelayMs = 300_000 } = opts;
 
   let attempt = 0;
 
@@ -61,7 +99,8 @@ export async function withRetry<T>(
       const apiDelay = parseRetryDelay(err);
       const backoff = Math.min(baseDelayMs * 2 ** (attempt - 1), maxDelayMs);
       const jitter = Math.random() * 1_000;
-      const delayMs = apiDelay !== null ? apiDelay + 500 : backoff + jitter;
+      // If we have an API delay, we wait exactly that (plus a small buffer)
+      const delayMs = apiDelay !== null ? apiDelay + 1000 : backoff + jitter;
 
       log.info(
         `[retry] ${label} — 429 rate limit (attempt ${attempt}/${maxAttempts}). ` +
